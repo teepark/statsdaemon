@@ -45,6 +45,12 @@ func (s Uint64Slice) Len() int           { return len(s) }
 func (s Uint64Slice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s Uint64Slice) Less(i, j int) bool { return s[i] < s[j] }
 
+type Float64Slice []float64
+
+func (s Float64Slice) Len() int           { return len(s) }
+func (s Float64Slice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s Float64Slice) Less(i, j int) bool { return s[i] < s[j] }
+
 type Percentiles []*Percentile
 type Percentile struct {
 	float float64
@@ -113,7 +119,7 @@ var (
 	counters        = make(map[string]int64)
 	gauges          = make(map[string]uint64)
 	lastGaugeValue  = make(map[string]uint64)
-	timers          = make(map[string]Uint64Slice)
+	timers          = make(map[string]Float64Slice)
 	countInactivity = make(map[string]int64)
 	sets            = make(map[string][]string)
 )
@@ -152,10 +158,10 @@ func packetHandler(s *Packet) {
 	case "ms":
 		_, ok := timers[s.Bucket]
 		if !ok {
-			var t Uint64Slice
+			var t Float64Slice
 			timers[s.Bucket] = t
 		}
-		timers[s.Bucket] = append(timers[s.Bucket], s.Value.(uint64))
+		timers[s.Bucket] = append(timers[s.Bucket], s.Value.(float64))
 	case "g":
 		gaugeValue, _ := gauges[s.Bucket]
 
@@ -330,11 +336,11 @@ func processTimers(buffer *bytes.Buffer, now int64, pctls Percentiles) int64 {
 		maxAtThreshold := max
 		count := len(timer)
 
-		sum := uint64(0)
+		sum := float64(0)
 		for _, value := range timer {
 			sum += value
 		}
-		mean := float64(sum) / float64(len(timer))
+		mean := sum / float64(len(timer))
 
 		for _, pct := range pctls {
 			if len(timer) > 1 {
@@ -539,9 +545,9 @@ func parseLine(line []byte) *Packet {
 	case "s":
 		value = string(val)
 	case "ms":
-		value, err = strconv.ParseUint(string(val), 10, 64)
+		value, err = strconv.ParseFloat(string(val), 64)
 		if err != nil {
-			log.Printf("ERROR: failed to ParseUint %s - %s", string(val), err)
+			log.Printf("ERROR: failed to ParseFloat %s - %s", string(val), err)
 			return nil
 		}
 	default:
