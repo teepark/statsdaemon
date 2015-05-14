@@ -87,7 +87,7 @@ func TestParseLineTimer(t *testing.T) {
 	packet := parseLine(d)
 	assert.NotEqual(t, packet, nil)
 	assert.Equal(t, "glork", packet.Bucket)
-	assert.Equal(t, uint64(320), packet.Value.(uint64))
+	assert.Equal(t, float64(320), packet.Value.(float64))
 	assert.Equal(t, "ms", packet.Modifier)
 	assert.Equal(t, float32(1), packet.Sampling)
 
@@ -95,7 +95,7 @@ func TestParseLineTimer(t *testing.T) {
 	packet = parseLine(d)
 	assert.NotEqual(t, packet, nil)
 	assert.Equal(t, "glork", packet.Bucket)
-	assert.Equal(t, uint64(320), packet.Value.(uint64))
+	assert.Equal(t, float64(320), packet.Value.(float64))
 	assert.Equal(t, "ms", packet.Modifier)
 	assert.Equal(t, float32(0.1), packet.Sampling)
 }
@@ -360,22 +360,22 @@ func TestPacketHandlerGauge(t *testing.T) {
 }
 
 func TestPacketHandlerTimer(t *testing.T) {
-	timers = make(map[string]Uint64Slice)
+	timers = make(map[string]Float64Slice)
 
 	p := &Packet{
 		Bucket:   "glork",
-		Value:    uint64(320),
+		Value:    float64(320),
 		Modifier: "ms",
 		Sampling: float32(1),
 	}
 	packetHandler(p)
 	assert.Equal(t, len(timers["glork"]), 1)
-	assert.Equal(t, timers["glork"][0], uint64(320))
+	assert.Equal(t, timers["glork"][0], float64(320))
 
-	p.Value = uint64(100)
+	p.Value = float64(100)
 	packetHandler(p)
 	assert.Equal(t, len(timers["glork"]), 2)
-	assert.Equal(t, timers["glork"][1], uint64(100))
+	assert.Equal(t, timers["glork"][1], float64(100))
 }
 
 func TestPacketHandlerSet(t *testing.T) {
@@ -424,8 +424,8 @@ func TestProcessCounters(t *testing.T) {
 
 func TestProcessTimers(t *testing.T) {
 	// Some data with expected mean of 20
-	timers = make(map[string]Uint64Slice)
-	timers["response_time"] = []uint64{0, 30, 30}
+	timers = make(map[string]Float64Slice)
+	timers["response_time"] = []float64{0, 30, 30}
 
 	now := int64(1418052649)
 
@@ -435,7 +435,7 @@ func TestProcessTimers(t *testing.T) {
 	lines := bytes.Split(buffer.Bytes(), []byte("\n"))
 
 	assert.Equal(t, num, int64(1))
-	assert.Equal(t, string(lines[0]), "response_time.mean 20.000000 1418052649")
+	assert.Equal(t, string(lines[0]), "response_time.mean 20 1418052649")
 	assert.Equal(t, string(lines[1]), "response_time.upper 30 1418052649")
 	assert.Equal(t, string(lines[2]), "response_time.lower 0 1418052649")
 	assert.Equal(t, string(lines[3]), "response_time.count 3 1418052649")
@@ -519,8 +519,8 @@ func TestProcessSets(t *testing.T) {
 
 func TestProcessTimersUpperPercentile(t *testing.T) {
 	// Some data with expected 75% of 2
-	timers = make(map[string]Uint64Slice)
-	timers["response_time"] = []uint64{0, 1, 2, 3}
+	timers = make(map[string]Float64Slice)
+	timers["response_time"] = []float64{0, 1, 2, 3}
 
 	now := int64(1418052649)
 
@@ -541,8 +541,8 @@ func TestProcessTimersUpperPercentile(t *testing.T) {
 func TestProcessTimersUpperPercentilePostfix(t *testing.T) {
 	flag.Set("postfix", ".test")
 	// Some data with expected 75% of 2
-	timers = make(map[string]Uint64Slice)
-	timers["postfix_response_time.test"] = []uint64{0, 1, 2, 3}
+	timers = make(map[string]Float64Slice)
+	timers["postfix_response_time.test"] = []float64{0, 1, 2, 3}
 
 	now := int64(1418052649)
 
@@ -562,8 +562,8 @@ func TestProcessTimersUpperPercentilePostfix(t *testing.T) {
 }
 
 func TestProcessTimesLowerPercentile(t *testing.T) {
-	timers = make(map[string]Uint64Slice)
-	timers["time"] = []uint64{0, 1, 2, 3}
+	timers = make(map[string]Float64Slice)
+	timers["time"] = []float64{0, 1, 2, 3}
 
 	now := int64(1418052649)
 
@@ -637,7 +637,7 @@ func BenchmarkManyDifferentSensors(t *testing.B) {
 	for i := 0; i < 1000; i++ {
 		bucket := "response_time" + strconv.Itoa(i)
 		for i := 0; i < 10000; i++ {
-			a := uint64(r.Uint32() % 1000)
+			a := float64(r.Uint32() % 1000)
 			timers[bucket] = append(timers[bucket], a)
 		}
 	}
@@ -670,7 +670,7 @@ func BenchmarkOneBigTimer(t *testing.B) {
 	r := rand.New(rand.NewSource(438))
 	bucket := "response_time"
 	for i := 0; i < 10000000; i++ {
-		a := uint64(r.Uint32() % 1000)
+		a := float64(r.Uint32() % 1000)
 		timers[bucket] = append(timers[bucket], a)
 	}
 
@@ -684,7 +684,7 @@ func BenchmarkLotsOfTimers(t *testing.B) {
 	for i := 0; i < 1000; i++ {
 		bucket := "response_time" + strconv.Itoa(i)
 		for i := 0; i < 10000; i++ {
-			a := uint64(r.Uint32() % 1000)
+			a := float64(r.Uint32() % 1000)
 			timers[bucket] = append(timers[bucket], a)
 		}
 	}

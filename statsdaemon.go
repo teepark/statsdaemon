@@ -362,18 +362,22 @@ func processTimers(buffer *bytes.Buffer, now int64, pctls Percentiles) int64 {
 			var tmpl string
 			var pctstr string
 			if pct.float >= 0 {
-				tmpl = "%s.upper_%s%s %d %d\n"
+				tmpl = "%s.upper_%s%s %.0f %d\n"
 				pctstr = pct.str
 			} else {
-				tmpl = "%s.lower_%s%s %d %d\n"
+				tmpl = "%s.lower_%s%s %.0f %d\n"
 				pctstr = pct.str[1:]
 			}
 			fmt.Fprintf(buffer, tmpl, bucketWithoutPostfix, pctstr, *postfix, maxAtThreshold, now)
 		}
 
-		fmt.Fprintf(buffer, "%s.mean%s %f %d\n", bucketWithoutPostfix, *postfix, mean, now)
-		fmt.Fprintf(buffer, "%s.upper%s %d %d\n", bucketWithoutPostfix, *postfix, max, now)
-		fmt.Fprintf(buffer, "%s.lower%s %d %d\n", bucketWithoutPostfix, *postfix, min, now)
+		mean_s := strconv.FormatFloat(mean, 'f', -1, 64)
+		max_s := strconv.FormatFloat(max, 'f', -1, 64)
+		min_s := strconv.FormatFloat(min, 'f', -1, 64)
+
+		fmt.Fprintf(buffer, "%s.mean%s %s %d\n", bucketWithoutPostfix, *postfix, mean_s, now)
+		fmt.Fprintf(buffer, "%s.upper%s %s %d\n", bucketWithoutPostfix, *postfix, max_s, now)
+		fmt.Fprintf(buffer, "%s.lower%s %s %d\n", bucketWithoutPostfix, *postfix, min_s, now)
 		fmt.Fprintf(buffer, "%s.count%s %d %d\n", bucketWithoutPostfix, *postfix, count, now)
 
 		delete(timers, bucket)
